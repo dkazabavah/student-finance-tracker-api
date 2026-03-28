@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Finance Tracker Tests</title>
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <main class="layout tests-layout">
+    <section class="card">
+      <h1>Validation Tests</h1>
+      <p class="muted">These checks confirm that the key regex rules and validators are working.</p>
+      <div id="test-results" class="test-results"></div>
+      <p><a href="index.html">← Back to app</a></p>
+    </section>
+  </main>
+
+  <script type="module">
+    import {
+      patterns,
+      isValidDescription,
+      isValidAmount,
+      isValidDate,
+      isValidCategory,
+      hasDuplicateWord,
+      isValidUrl
+    } from "./scripts/validators.js";
+
+    const cases = [
+      ["Description format", isValidDescription("Lunch at canteen"), true],
+      ["Description rejects only spaces", isValidDescription("   "), false],
+      ["Amount format", isValidAmount("2500.50"), true],
+      ["Amount rejects letters", isValidAmount("20k"), false],
+      ["Date format", isValidDate("2026-03-26"), true],
+      ["Date rejects bad month", isValidDate("2026-14-26"), false],
+      ["Category format", isValidCategory("School Fees"), true],
+      ["Category rejects numbers", isValidCategory("Food2"), false],
+      ["Duplicate word detection", hasDuplicateWord("food food"), true],
+      ["Duplicate word rejects clean phrase", hasDuplicateWord("food plan"), false],
+      ["URL validation", isValidUrl("https://example.com/receipt.jpg"), true],
+      ["URL rejects plain text", isValidUrl("receipt image"), false],
+      ["Cents search example", patterns.centsSearch.test("19.99"), true],
+      ["Beverage search example", patterns.beverageSearch.test("coffee"), true]
+    ];
+
+    const container = document.getElementById("test-results");
+
+    container.innerHTML = cases.map(([name, actual, expected]) => {
+      const pass = actual === expected;
+      return `
+        <div class="test-row ${pass ? "pass" : "fail"}">
+          <span>${pass ? "✓" : "✗"}</span>
+          <div>
+            <strong>${name}</strong>
+            <p>Expected: ${expected} · Got: ${actual}</p>
+          </div>
+        </div>
+      `;
+    }).join("");
+  </script>
+</body>
+</html>

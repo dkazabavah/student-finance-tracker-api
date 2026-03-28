@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Finance Tracker</title>
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="brand-wrap">
+      <div class="brand-mark" aria-hidden="true">₣</div>
+      <div>
+        <h1>Student Finance Tracker</h1>
+        <p class="tagline">Track spending, search smart, and convert RWF with live exchange data.</p>
+      </div>
+    </div>
+
+    <nav aria-label="Main navigation" class="main-nav">
+      <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+      <button class="nav-btn" data-view="records">Records</button>
+      <button class="nav-btn" data-view="settings">Settings</button>
+      <button id="quick-theme-toggle" class="nav-btn theme-btn" type="button" aria-pressed="false">🌙 Dark mode</button>
+      <a class="nav-link" href="tests.html">Tests</a>
+    </nav>
+  </header>
+
+  <main id="main" class="layout">
+    <section class="hero card">
+      <div>
+        <h2>Practical finance tracking for students</h2>
+        <p>
+          Add daily expenses, monitor trends, search records using regex, and see your totals in
+          RWF, USD, and EUR using a live exchange rate API.
+        </p>
+      </div>
+      <div class="hero-badges" aria-label="Key highlights">
+        <span>Offline first</span>
+        <span>API powered</span>
+        <span>Accessible</span>
+      </div>
+    </section>
+
+    <div id="feedback" class="feedback" aria-live="polite"></div>
+
+    <section id="dashboard-view" class="view-section">
+      <div class="cards-grid stats-grid" aria-label="Statistics">
+        <article class="card stat-card">
+          <h3>Total records</h3>
+          <p id="stat-total-records" class="stat-value">0</p>
+        </article>
+        <article class="card stat-card">
+          <h3>Total spending</h3>
+          <p id="stat-total-rwf" class="stat-value">RWF 0</p>
+        </article>
+        <article class="card stat-card">
+          <h3>Top category</h3>
+          <p id="stat-top-category" class="stat-value">—</p>
+        </article>
+        <article class="card stat-card">
+          <h3>Monthly cap status</h3>
+          <p id="stat-cap" class="stat-value">No cap set</p>
+        </article>
+      </div>
+
+      <div class="cards-grid split-grid">
+        <article class="card">
+          <div class="card-title-row">
+            <h3>Add expense</h3>
+            <p class="muted">Fields marked * are required.</p>
+          </div>
+
+          <form id="expense-form" novalidate>
+            <div class="form-grid">
+              <label>
+                Description *
+                <input id="description" name="description" type="text" maxlength="80" placeholder="e.g. Lunch at campus canteen" required />
+              </label>
+
+              <label>
+                Amount (RWF) *
+                <input id="amount" name="amount" type="text" inputmode="decimal" placeholder="e.g. 2500" required />
+              </label>
+
+              <label>
+                Date *
+                <input id="date" name="date" type="date" required />
+              </label>
+
+              <label>
+                Category *
+                <select id="category" name="category" required></select>
+              </label>
+
+              <label>
+                Receipt link
+                <input id="receipt" name="receipt" type="url" placeholder="https://example.com/receipt.jpg" />
+              </label>
+
+              <label>
+                Notes
+                <input id="notes" name="notes" type="text" maxlength="120" placeholder="Optional note" />
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Save expense</button>
+              <button type="reset" class="secondary-btn">Clear</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="card">
+          <div class="card-title-row">
+            <h3>Live currency conversion</h3>
+            <button id="refresh-rates-btn" class="secondary-btn" type="button">Refresh rates</button>
+          </div>
+          <p class="muted" id="rates-status">Rates not loaded yet.</p>
+
+          <div class="conversion-grid">
+            <label>
+              Amount in RWF
+              <input id="convert-amount" type="number" min="0" step="0.01" value="10000" />
+            </label>
+            <button id="convert-btn" class="primary-btn" type="button">Convert now</button>
+          </div>
+
+          <div class="conversion-results" aria-live="polite">
+            <p><strong>USD:</strong> <span id="usd-result">—</span></p>
+            <p><strong>EUR:</strong> <span id="eur-result">—</span></p>
+          </div>
+
+          <div class="api-note">
+            <p>
+              Exchange data is loaded from ExchangeRate-API's open access endpoint and cached locally
+              to reduce requests.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <div class="cards-grid split-grid">
+        <article class="card">
+          <div class="card-title-row">
+            <h3>7-day spending trend</h3>
+            <p class="muted">Recent spending in RWF</p>
+          </div>
+          <div id="trend-chart" class="chart" role="img" aria-label="Bar chart showing seven day spending trend"></div>
+        </article>
+
+        <article class="card">
+          <div class="card-title-row">
+            <h3>Quick insights</h3>
+            <p class="muted">Simple spending observations</p>
+          </div>
+          <ul id="insights-list" class="insights-list"></ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="records-view" class="view-section hidden">
+      <div class="cards-grid split-grid">
+        <article class="card">
+          <div class="card-title-row">
+            <h3>Search, filter, and sort</h3>
+            <p class="muted">Regex search supported</p>
+          </div>
+
+          <div class="toolbar-grid">
+            <label>
+              Search
+              <input id="search-input" type="text" placeholder="Try (coffee|tea) or transport" />
+            </label>
+
+            <label>
+              Category
+              <select id="filter-category">
+                <option value="">All categories</option>
+              </select>
+            </label>
+
+            <label>
+              Sort by
+              <select id="sort-select">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="amount-desc">Highest amount</option>
+                <option value="amount-asc">Lowest amount</option>
+                <option value="description-asc">Description A–Z</option>
+              </select>
+            </label>
+          </div>
+
+          <p class="muted">Matching text will be highlighted in the table below.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-title-row">
+            <h3>Data actions</h3>
+            <p class="muted">Backup and restore records</p>
+          </div>
+
+          <div class="action-buttons">
+            <button id="export-btn" class="primary-btn" type="button">Export JSON</button>
+            <label class="file-input-label secondary-btn">
+              Import JSON
+              <input id="import-input" type="file" accept="application/json" />
+            </label>
+            <button id="seed-btn" class="secondary-btn" type="button">Load sample data</button>
+            <button id="clear-btn" class="danger-btn" type="button">Clear all records</button>
+          </div>
+        </article>
+      </div>
+
+      <article class="card table-card">
+        <div class="card-title-row">
+          <h3>Expense records</h3>
+          <p id="record-count" class="muted">0 records</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Receipt</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="records-body"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section id="settings-view" class="view-section hidden">
+      <div class="cards-grid split-grid">
+        <article class="card">
+          <div class="card-title-row">
+            <h3>Preferences</h3>
+            <p class="muted">Customize your tracker</p>
+          </div>
+
+          <form id="settings-form" novalidate>
+            <div class="form-grid">
+              <label>
+                Monthly cap (RWF)
+                <input id="monthly-cap" type="number" min="0" step="0.01" placeholder="e.g. 150000" />
+              </label>
+
+              <label>
+                USD exchange rate override
+                <input id="usd-rate" type="number" min="0" step="0.000001" placeholder="Optional manual rate" />
+              </label>
+
+              <label>
+                EUR exchange rate override
+                <input id="eur-rate" type="number" min="0" step="0.000001" placeholder="Optional manual rate" />
+              </label>
+
+              <label>
+                Add new category
+                <input id="new-category" type="text" maxlength="30" placeholder="e.g. Airtime" />
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <label class="switch">
+                <input id="dark-mode-toggle" type="checkbox" />
+                <span>Enable dark mode</span>
+              </label>
+              <p class="muted toggle-help">Your theme choice is saved automatically and applied on the next visit.</p>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn">Save settings</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="card">
+          <div class="card-title-row">
+            <h3>Current categories</h3>
+            <p class="muted">Default and custom categories</p>
+          </div>
+
+          <ul id="category-list" class="category-list"></ul>
+        </article>
+      </div>
+
+      <article class="card">
+        <div class="card-title-row">
+          <h3>About this project</h3>
+          <p class="muted">Assignment-ready summary</p>
+        </div>
+        <p>
+          This project helps students manage personal finances in a practical way. It stores records
+          locally for privacy, supports offline use, and adds a live external API for currency
+          conversion so users can understand their spending beyond RWF.
+        </p>
+        <p>
+          Author: <strong>David Kazabavaho</strong> ·
+          <a href="https://github.com/dkazabavah" target="_blank" rel="noreferrer">GitHub</a> ·
+          <a href="mailto:d.kazabavah@alustudent.com">Email</a>
+        </p>
+      </article>
+    </section>
+  </main>
+
+  <dialog id="edit-dialog">
+    <form method="dialog" id="edit-form" novalidate>
+      <h3>Edit expense</h3>
+      <input id="edit-id" type="hidden" />
+      <div class="form-grid">
+        <label>
+          Description *
+          <input id="edit-description" type="text" required />
+        </label>
+        <label>
+          Amount (RWF) *
+          <input id="edit-amount" type="text" required />
+        </label>
+        <label>
+          Date *
+          <input id="edit-date" type="date" required />
+        </label>
+        <label>
+          Category *
+          <select id="edit-category" required></select>
+        </label>
+        <label>
+          Receipt link
+          <input id="edit-receipt" type="url" />
+        </label>
+        <label>
+          Notes
+          <input id="edit-notes" type="text" maxlength="120" />
+        </label>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="primary-btn">Update</button>
+        <button type="button" id="cancel-edit" class="secondary-btn">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="site-footer">
+    <p>Student Finance Tracker · Built with HTML, CSS, and Vanilla JavaScript.</p>
+    <p>
+      Currency data attribution:
+      <a href="https://www.exchangerate-api.com" target="_blank" rel="noreferrer">
+        Rates By Exchange Rate API
+      </a>
+    </p>
+  </footer>
+
+  <script type="module" src="scripts/app.js"></script>
+</body>
+</html>
