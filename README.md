@@ -343,5 +343,4 @@ In under 3 minutes, show:
 
 * GitHub: https://github.com/dkazabavah
 * Email: d.kazabavah@alustudent.com
-* Demo video: https://drive.google.com/file/d/12D\_5WmNTjiCaXpnMzCjLSq8gMc6EbI4t/view?usp=sharing
-
+* Demo video:https://drive.google.com/file/d/12D_5WmNTjiCaXpnMzCjLSq8gMc6EbI4t/view?usp=sharing
